@@ -1,0 +1,71 @@
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% Paper: M.F.A. Ahmed and S.A. Vorobyov, "Sidelobe Control in Collaborative
+% Beamforming via Node Selection," submitted to the IEEE Trans. Signal
+% Processing.
+% Fig 9 : Eq 28 Expon. Dist. of INR - K = 1 BSs/APs
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% WSN   : Data structure.
+% WSN.M : Number of sensor nodes.
+% WSN.R : Cluster radius.
+% WSN.x : x coordinates of the sensor node locations.
+% WSN.y : y coordinates of the sensor node locations.
+% WSN.N :
+% WSN.L :
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% WSN Parameter Set-up
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+clear;clc;
+INRthr = 10.^([-5:5:10]/10);
+INR = 10.^([-25:5:40]/10);
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+tic
+
+for INRcntr=1:length(INRthr)
+    
+    for itr = 1:30
+        
+        GeneralWSN
+        WSN.INRthr = INRthr(INRcntr);
+        WSN = UniformWSN(WSN);
+        WSN.ChannelGain = exp(sqrt(WSN.v)*randn(length(WSN.phi),WSN.M));
+        
+        WSN = NodeSelection(WSN);
+        %        WSN.phi = WSN.APsDirections(WSN.UnTargetedAP);
+        BP = BeamPattern(WSN);
+        I = find( WSN.phi == WSN.APsDirections(WSN.UnTargetedAP));
+        INR_sim_(itr) = BP(I)./WSN.NoisePower;
+        
+        [INRcntr itr]
+    end
+    
+    meanINR_sim(INRcntr) = mean(INR_sim_);
+    
+    [INR_sim(INRcntr,:),CCDF_sim(INRcntr,:)] = myccdf(INR_sim_);
+    
+    % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    
+    WSN.beta = (WSN.NoisePower*WSN.INRthr)/(2*WSN.vX);
+    WSN.vI =   WSN.vX*(((1-(1+WSN.beta).*exp(-WSN.beta))  )./ (1-exp(-WSN.beta)) ) ;
+    WSN.alpha = 1./(2*WSN.vI);
+    
+    CCDF(INRcntr,: ) = exp(-WSN.alpha.*WSN.NoisePower.*INR);
+    
+    
+    
+end
+
+
+
+figure
+hold on
+box('on');
+grid on
+xlabel('SINR \eta_{thr} [dB]');
+ylabel('CCDF');
+
+plot(10*log10(INR_sim),CCDF_sim,'kx')
+plot(10*log10(INR),CCDF,'k-')
+xlim([-25 40]);
+
+legend('Simulations','Analatical Expression')

@@ -1,0 +1,90 @@
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% Paper: M.F.A. Ahmed and S.A. Vorobyov, "Sidelobe Control in Collaborative
+% Beamforming via Node Selection," submitted to the IEEE Trans. Signal
+% Processing.
+% Fig 7 : Ave. No. of Trials - Ave. Interference  (for different L values)
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% WSN   : Data structure.
+% WSN.M : Number of sensor nodes.
+% WSN.R : Cluster radius.
+% WSN.x : x coordinates of the sensor node locations.
+% WSN.y : y coordinates of the sensor node locations.
+% WSN.N :
+% WSN.L :
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+% WSN Parameter Set-up
+clear;clc;
+L=[16 32 64 128];     %increment in the number of sensors
+INRthr=10.^([0:5:30]./10);
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.R = 5;
+WSN.M = 512;
+WSN.N = 256;
+WSN.L = 32;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.Index = 1:WSN.M;
+WSN.APsDirections = [0 65]*pi/180;
+WSN.K = length(WSN.APsDirections) - 1;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.SNR = 10^(20/10);
+WSN.NoisePower = 0.05;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.phi = (-180:180)*pi/180;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.TargetedAP = 1;
+WSN.UnTargetedAP = 2;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.v  = 0.2;
+WSN.m  = 0;
+
+WSN.ma = exp(WSN.v/2);
+WSN.va = (exp(WSN.v)-1)*(exp(WSN.v));
+
+WSN.vx = 0.5;
+WSN.mx = 0;
+
+WSN.vX = WSN.NoisePower*WSN.SNR*(WSN.vx*(WSN.va+WSN.ma^2));
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+tic
+for Lcntr = 1 : length(L)
+    for INRcntr = 1:length(INRthr)
+        for cntr = 1 : 100
+                        
+            WSN.L = L(Lcntr);
+            WSN.INRthr = INRthr(INRcntr);
+            
+            WSN = UniformWSN(WSN);            
+            WSN.ChannelGain = exp(sqrt(WSN.v)*randn(length(WSN.phi),WSN.M));
+            
+            
+            WSN1 = NodeSelection(WSN);
+            NoOfTrials(Lcntr,INRcntr,cntr) = WSN1.NoOfTrials;
+            
+            [Lcntr INRcntr  toc]
+            
+        end
+    end
+end
+
+AveNoItr = mean(NoOfTrials,3);
+p = 1- exp(-(( WSN.NoisePower*INRthr ))./(2*WSN.vX*ones(1,length(INRthr)))) ;
+LL = L'*ones(1,length(INRthr));
+pp = ones(length(L),1)*p;
+AveNoItrExpression = WSN.N./(LL.*pp);
+
+
+
+figure
+hold on
+grid on
+box('on');
+xlabel('\eta_{thr} [dB]');
+ylabel('Average Number of Iterations E\{T\}');
+plot(10*log10(INRthr),AveNoItr(1,:),'xk','LineWidth',1);
+plot(10*log10(INRthr),AveNoItrExpression(1,:),'k','LineWidth',1)
+legend('Simulations','Analatical Expression');
+plot(10*log10(INRthr),AveNoItr,'xk','LineWidth',1);
+plot(10*log10(INRthr),AveNoItrExpression,'k','LineWidth',1)

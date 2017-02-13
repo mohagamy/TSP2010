@@ -1,0 +1,45 @@
+function WSN = NodeSelection(WSN,APs)
+
+WSNo = WSN;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WSN.phi = WSN.APsDirection(2:end);
+StoreChannelGain = WSN.ChannelGain;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+for i = 1 : WSN.K
+    I = find( WSN.phi == DirectionOf_OtherD(i));
+    TempChannelGain(i,:) = WSN.ChannelGain(I,:);
+end
+
+%--------------------------------------------------
+WSN.ChannelGain = TempChannelGain;
+%--------------------------------------------------
+cntr = 1;
+WSN.NoOfTrials = 0;
+Flage = ones(1,WSN.M);
+I = [];
+%--------------------------------------------------
+
+
+while cntr <= (WSN.N/WSN.L)
+    Ii = find(Flage == 1);
+    IIi=randperm(length(Ii));
+    WSN.Index = Ii(IIi(1:WSN.L));
+    
+    
+    BP = BeamPattern(WSN,DirectionOf_D0,DirectionOf_OtherD);
+    
+    INRi_= BP./WSN.NoisePower;
+    
+    if sum(INRi_ < APs.INR_thr) == length(INRi_)
+        I = [I WSN.Index];
+        Flage(WSN.Index) = 0;
+        cntr=cntr+1;
+    end
+    WSN.NoOfTrials = WSN.NoOfTrials + 1;
+end
+
+
+
+WSN.Index = I;
+WSN.ChannelGain = StoreChannelGain;

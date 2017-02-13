@@ -1,0 +1,29 @@
+clear;clc
+N = 1000;
+v = 0.2;
+m = 0;
+
+ma = exp(m+(v/2));
+va = (exp(v)-1)*(exp(2*m + v));
+
+a = exp(sqrt(v)*randn(K,N));
+
+
+m1 = mean(a(:));
+v1 = var(a(:));
+
+
+s = sum(a');
+
+
+m = mean(s);
+v = var(s);
+
+E1 = N*(v1)+((N^2)*(m1^2));
+
+E2 = v + m^2;
+
+[m N*m1]
+[v N*v1]
+[E1 E2]
+
